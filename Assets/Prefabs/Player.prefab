@@ -99,8 +99,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spRenderer: {fileID: 2617260648975600780}
+  maxHealth: 3
   staminaMax: 100
   staminaGainBySec: 10
+  furyAmountMax: 100
+  furyGainByAttack: 25
+  furyDecreaseRate: 10
   dashRange: 5
   dashStaminaCost: 30
   shurikenPrefab: {fileID: 767759865585562771, guid: 4ed1307c90fd5bc4bbd0886b1559e5f5, type: 3}
@@ -120,8 +124,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42778b14b8fc5ef49bc0258faa0afcec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalSpeed: 1
-  furySpeed: 3
+  normalSpeed: 4
+  furySpeed: 7
 --- !u!50 &2617260648975600776
 Rigidbody2D:
   serializedVersion: 4

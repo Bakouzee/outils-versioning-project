@@ -11,7 +11,7 @@ public class Player : MonoBehaviour
     new CircleCollider2D collider;
     Camera cam;
 
-    [Header("Health")] float maxHealth;
+    [Header("Health"), SerializeField] float maxHealth;
     float health;
     bool dead;
 
@@ -44,10 +44,13 @@ public class Player : MonoBehaviour
         cam = Camera.main;
 
         health = maxHealth;
-        stamina = staminaMax;
-        furyAmount = 0;
+        HealthDisplayer.StartDisplay(maxHealth);
 
-        //HealthDisplayer.StartDisplay(maxHealth);
+        stamina = staminaMax;
+        StaminaDisplayer.StartDisplay(staminaMax);
+
+        furyAmount = 0;
+        FuryDisplayer.StartDisplay(furyAmount, furyAmountMax);
     }
 
     // Update is called once per frame
@@ -56,7 +59,13 @@ public class Player : MonoBehaviour
         if (!dead)
         {
             // Gain stamina
-            stamina = Mathf.Min(staminaMax, stamina + staminaGainBySec * Time.deltaTime);
+            if (stamina < staminaMax)
+            {
+                stamina = Mathf.Min(staminaMax, stamina + staminaGainBySec * Time.deltaTime);
+
+                // Update UI
+                StaminaDisplayer.UpdateDisplay(stamina);
+            }
 
             // Test furymode
             if (Input.GetKeyDown(KeyCode.E))
@@ -65,26 +74,35 @@ public class Player : MonoBehaviour
             }
 
             // Dash
-            if (Input.GetMouseButtonDown(0) && stamina >= dashStaminaCost)
+            if (Input.GetMouseButtonDown(0) && (furyMode || stamina >= dashStaminaCost))
             {
-                stamina -= dashStaminaCost;
+                if(!furyMode) stamina -= dashStaminaCost;
                 AttackDash();
             }
             // Launch Shuriken
-            else if (Input.GetMouseButtonDown(1) && shurikensAttackTime <= Time.time && stamina >= shurikensStaminaCost)
+            else if (Input.GetMouseButtonDown(1) && shurikensAttackTime <= Time.time && (furyMode || stamina >= shurikensStaminaCost))
             {
-                stamina -= shurikensStaminaCost;
+                if(!furyMode) stamina -= shurikensStaminaCost;
                 LaunchShurikens();
             }
 
             // Decrease constantly fury
-            if(furyAmount > 0)
+            if (furyAmount > 0)
             {
                 furyAmount -= Time.deltaTime * furyDecreaseRate;
+
+                // Update UI
+                FuryDisplayer.UpdateDisplay(furyAmount);
             }
-            if(furyAmount <= 0)
+            if (furyAmount <= 0)
             {
-                furyAmount = 0;
+                if (furyAmount != 0)
+                {
+                    furyAmount = 0;
+
+                    // Update UI
+                    FuryDisplayer.UpdateDisplay(furyAmount);
+                }
 
                 // Disable fury mode if needed
                 if (furyMode) SetFuryMode(false);
@@ -92,10 +110,10 @@ public class Player : MonoBehaviour
         }
     }
 
-    private void OnGUI()
-    {
-        GUILayout.Label("Stamina: " + ((int)stamina).ToString());
-    }
+    //private void OnGUI()
+    //{
+    //    GUILayout.Label("Stamina: " + ((int)stamina).ToString());
+    //}
 
     #region Get mouse direction from player
     Vector2 GetMouseDirectionFromPlayer(ref Vector2 mousePos)
@@ -120,9 +138,9 @@ public class Player : MonoBehaviour
         {
             // Check if hit is an enemy
 
-                // Deal damage
+            // Deal damage
 
-                // Add fury if not already in fury
+            // Add fury if not already in fury
             if (!furyMode)
             {
                 furyAmount = Mathf.Min(furyAmountMax, furyAmount + furyGainByAttack);
@@ -169,7 +187,7 @@ public class Player : MonoBehaviour
         health++;
 
         // Update UI
-        //HealthDisplayer.UpdateDisplay(health);
+        HealthDisplayer.UpdateDisplay(health);
     }
     void TakeDamage()
     {
@@ -180,7 +198,7 @@ public class Player : MonoBehaviour
         if (health <= 0) Die();
 
         // Update UI
-        //HealthDisplayer.UpdateDisplay(health);
+        HealthDisplayer.UpdateDisplay(health);
     }
     void Die()
     {
