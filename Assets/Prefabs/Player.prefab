@@ -99,11 +99,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spRenderer: {fileID: 2617260648975600780}
+  staminaMax: 100
+  staminaGainBySec: 10
   dashRange: 5
+  dashStaminaCost: 30
   shurikenPrefab: {fileID: 767759865585562771, guid: 4ed1307c90fd5bc4bbd0886b1559e5f5, type: 3}
   shurikenLaunchedByAttack: 3
   timeBetweenTwoShurikens: 0.2
   shurikensAttackCooldownDuration: 3
+  shurikensStaminaCost: 10
 --- !u!114 &2617260648975600777
 MonoBehaviour:
   m_ObjectHideFlags: 0

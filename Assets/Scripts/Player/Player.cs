@@ -10,14 +10,20 @@ public class Player : MonoBehaviour
     new CircleCollider2D collider;
     Camera cam;
 
+    [Header("Stamina"), SerializeField] float staminaMax;
+    [SerializeField] float staminaGainBySec;
+    float stamina;
+
     [Header("Dash attack")]
     [Range(2, 10), SerializeField] float dashRange;
+    [SerializeField] float dashStaminaCost;
 
     [Header("Shurikens attack"), SerializeField] GameObject shurikenPrefab;
     [SerializeField] int shurikenLaunchedByAttack;
     [SerializeField] float timeBetweenTwoShurikens;
     [Space(5), SerializeField] float shurikensAttackCooldownDuration;
     float shurikensAttackTime;
+    [Space(5), SerializeField] float shurikensStaminaCost;
 
     bool furyMode;
 
@@ -27,11 +33,16 @@ public class Player : MonoBehaviour
         controller = GetComponent<PlayerController>();
         collider = GetComponent<CircleCollider2D>();
         cam = Camera.main;
+
+        stamina = staminaMax;
     }
 
     // Update is called once per frame
     void Update()
     {
+        // Gain stamina
+        stamina = Mathf.Min(staminaMax, stamina + staminaGainBySec * Time.deltaTime);
+
         // Test furymode
         if (Input.GetKeyDown(KeyCode.E))
         {
@@ -39,15 +50,22 @@ public class Player : MonoBehaviour
         }
 
         // Dash
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && stamina >= dashStaminaCost)
         {
+            stamina -= dashStaminaCost;
             AttackDash();
         }
         // Launch Shuriken
-        else if (Input.GetMouseButtonDown(1) && shurikensAttackTime <= Time.time)
+        else if (Input.GetMouseButtonDown(1) && shurikensAttackTime <= Time.time && stamina >= shurikensStaminaCost)
         {
+            stamina -= shurikensStaminaCost;
             LaunchShurikens();
         }
+    }
+
+    private void OnGUI()
+    {
+        GUILayout.Label("Stamina: " + ((int)stamina).ToString());
     }
 
     #region Get mouse direction from player
@@ -99,7 +117,7 @@ public class Player : MonoBehaviour
             // Temp
             shuriken.GetComponent<Rigidbody2D>().velocity = dir;
 
-            Destroy(shuriken, 5f);
+            Destroy(shuriken, 20f);
 
             yield return new WaitForSeconds(timeBetweenTwoShurikens);
         }
