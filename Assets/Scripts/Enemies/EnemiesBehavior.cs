@@ -8,7 +8,8 @@ public class EnemiesBehavior : MonoBehaviour
     bool canDash;
 
     public float timerBeforeDash = 0f;
-    public float speedEnemy;
+    public float speedEnemy = 0f;
+    public float rotationShieldSpeed = 0f;
 
     Transform player;
     Rigidbody2D rb;
@@ -30,11 +31,12 @@ public class EnemiesBehavior : MonoBehaviour
         rb.rotation = angle;                                                 // the rotation is refreshing every frame to point to the player
         direction.Normalize();                                               
         movement = direction;                                                
-                                                                             
+                                  
+        // If the shield is activated so the enemy have a shield rotating around him with a speed
         if (withShield)
         {
             shield.SetActive(true);
-            shield.transform.RotateAround(gameObject.transform.position, shield.transform.position, 60f);
+            shield.transform.RotateAround(gameObject.transform.position, Vector3.forward, rotationShieldSpeed * Time.deltaTime);
         }
     }
 
