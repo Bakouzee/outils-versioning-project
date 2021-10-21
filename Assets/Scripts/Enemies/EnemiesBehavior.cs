@@ -14,6 +14,8 @@ public class EnemiesBehavior : MonoBehaviour
     public float distanceSeeingByEnemy = 0f;
     public float timerBeforeDash = 5f;
 
+    public int health = 25;
+
     Transform player;
     Rigidbody2D rb;
     public GameObject shield;
@@ -59,6 +61,12 @@ public class EnemiesBehavior : MonoBehaviour
         {
             shield.SetActive(true);
             shield.transform.RotateAround(gameObject.transform.position, Vector3.forward, rotationShieldSpeed * Time.deltaTime);
+        }
+
+        if(health <= 0)
+        {
+            this.enabled = false;        // script disable to avoid problems
+            gameObject.SetActive(false); // gameObject disable
         }
     }
 
