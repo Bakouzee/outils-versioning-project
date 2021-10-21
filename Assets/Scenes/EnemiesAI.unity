@@ -3727,9 +3727,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   withShield: 1
-  timerBeforeDash: 3
+  timer: 0
   speedEnemy: 2
   rotationShieldSpeed: 100
+  distanceSeeingByEnemy: 4
+  timerBeforeDash: 5
   shield: {fileID: 2075402261}
 --- !u!50 &1671548180
 Rigidbody2D:
