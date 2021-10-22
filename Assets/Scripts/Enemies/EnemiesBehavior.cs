@@ -6,6 +6,7 @@ public class EnemiesBehavior : MonoBehaviour
 {
     public bool withShield;
     bool canDash, isReloadingTheDash;
+    public bool closeCombat;
 
     public float timer= 0f;
     public float speedEnemy = 0f;
@@ -13,14 +14,19 @@ public class EnemiesBehavior : MonoBehaviour
     float distance = 0f;
     public float distanceSeeingByEnemy = 0f;
     public float timerBeforeDash = 5f;
+    public float range = 2.0f;
 
     public int health = 25;
+
+    Vector2 movement;
+
+    LayerMask playerLayer;
+    RaycastHit2D cac;
 
     Transform player;
     Rigidbody2D rb;
     public GameObject shield;
 
-    Vector2 movement;
 
     void Start()
     {
@@ -37,25 +43,35 @@ public class EnemiesBehavior : MonoBehaviour
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg; // gives the angle between the enemy and the player
         rb.rotation = angle;                                                 // the rotation is refreshing every frame to point to the player
         direction.Normalize();                                               
-        movement = direction;                                                
-                                
-        // if the enemy and the player are at a certain distance and the enemy can't dash, the enemy can dash
-        if(distance <= distanceSeeingByEnemy && !canDash)
-        {
-            canDash = true;            
-        }
+        movement = direction;
 
-        // time to reload before the enemy will dash again
-        if (isReloadingTheDash)
+        if (closeCombat)
         {
-            timer += Time.deltaTime;
-            if(timer >= timerBeforeDash)
+            if(distance <= range)
             {
-                timer = 0f;
-                isReloadingTheDash = false;
+                Attack();
+            }
+        }
+        else
+        {
+            // if the enemy and the player are at a certain distance and the enemy can't dash, the enemy can dash
+            if(distance <= distanceSeeingByEnemy && !canDash)
+            {
+                canDash = true;            
             }
 
+            // time to reload before the enemy will dash again
+            if (isReloadingTheDash)
+            {
+                timer += Time.deltaTime;
+                if(timer >= timerBeforeDash)
+                {
+                    timer = 0f;
+                    isReloadingTheDash = false;
+                }
+            }
         }
+
         // If the shield is activated so the enemy have a shield rotating around him with a speed
         if (withShield)
         {
@@ -95,5 +111,11 @@ public class EnemiesBehavior : MonoBehaviour
         isReloadingTheDash = true;                                                          // the enemy's reloading his dash
         timer = 0f;
         canDash = false;                                                                    // can't dash
+    }
+
+    void Attack()
+    {
+        Vector2 attackRange = new Vector2(2.0f, -2.0f);
+        Physics2D.OverlapArea(transform.position, attackRange, playerLayer);
     }
 }
