@@ -14,6 +14,11 @@ public class Player : MonoBehaviour
     [Header("Health"), SerializeField] float maxHealth;
     float health;
     bool dead;
+    [Header("Invulnerability and knockback"), SerializeField] float invulnerabilityTimer = 0.5f;
+    bool invulnerable;
+    [SerializeField] float knockBackSpeed = 1f;
+    [SerializeField] float knockBackDuration = 0.5f;
+    bool stagger;
 
     [Header("Stamina"), SerializeField] float staminaMax;
     [SerializeField] float staminaGainBySec;
@@ -26,8 +31,11 @@ public class Player : MonoBehaviour
     bool furyMode;
 
     [Header("Dash attack")]
-    [Range(2, 10), SerializeField] float dashRange;
+    [SerializeField] float dashSpeed;
+    [SerializeField] float dashDuration;
     [SerializeField] float dashStaminaCost;
+    bool dashing;
+    List<EnemiesBehavior> enemiesTouched = new List<EnemiesBehavior>();
 
     [Header("Shurikens attack"), SerializeField] GameObject shurikenPrefab;
     [SerializeField] int shurikenLaunchedByAttack;
@@ -67,23 +75,26 @@ public class Player : MonoBehaviour
                 StaminaDisplayer.UpdateDisplay(stamina);
             }
 
-            // Test furymode
-            if (Input.GetKeyDown(KeyCode.E))
+            if (!stagger)
             {
-                SetFuryMode(!furyMode);
-            }
+                // Test furymode
+                if (Input.GetKeyDown(KeyCode.E))
+                {
+                    SetFuryMode(!furyMode);
+                }
 
-            // Dash
-            if (Input.GetMouseButtonDown(0) && (furyMode || stamina >= dashStaminaCost))
-            {
-                if(!furyMode) stamina -= dashStaminaCost;
-                AttackDash();
-            }
-            // Launch Shuriken
-            else if (Input.GetMouseButtonDown(1) && shurikensAttackTime <= Time.time && (furyMode || stamina >= shurikensStaminaCost))
-            {
-                if(!furyMode) stamina -= shurikensStaminaCost;
-                LaunchShurikens();
+                // Dash
+                if (Input.GetMouseButtonDown(0) && (furyMode || stamina >= dashStaminaCost))
+                {
+                    if(!furyMode) stamina -= dashStaminaCost;
+                    StartDashAttack();
+                }
+                // Launch Shuriken
+                else if (Input.GetMouseButtonDown(1) && shurikensAttackTime <= Time.time && (furyMode || stamina >= shurikensStaminaCost))
+                {
+                    if(!furyMode) stamina -= shurikensStaminaCost;
+                    LaunchShurikens();
+                }
             }
 
             // Decrease constantly fury
@@ -110,6 +121,64 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (dashing)
+        {
+            Debug.Log(collision.tag);
+            switch (collision.tag)
+            {
+                case "Wall":
+                    // Stop dash
+                    StopDashAttack();
+                    break;
+                case "Enemy":
+                    // Get the enemy
+                        Debug.Log("?");
+                    EnemiesBehavior enemy;
+                    if(collision.TryGetComponent(out enemy))
+                    {
+                        Debug.Log("Componenet found");
+                        // Check if this enemy already has been touched
+                        if (!enemiesTouched.Contains(enemy))
+                        {
+                            // Add enemy to the list of enemies touched
+                            enemiesTouched.Add(enemy);
+
+                            // Deal damage to the enemy touched
+                            enemy.TakeDamage();
+
+                            // Add fury points if not already in fury
+                            if (!furyMode)
+                            {
+                                furyAmount = Mathf.Min(furyAmountMax, furyAmount + furyGainByAttack);
+                                if (furyAmount == furyAmountMax) SetFuryMode(true);
+                            }
+                        }
+                    }
+                    break;
+                case "EnemyShield":
+                    // Stop dash
+                    StopDashAttack();
+
+                    // Get stunned with knockback
+                    StartCoroutine(StartKnockback((transform.position - collision.bounds.center).normalized));
+                    break;
+            }
+        }
+    }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.collider.CompareTag("EnemyShield"))
+        {
+            // Stop dash
+            if(dashing) StopDashAttack();
+
+            // Get stunned with knockback
+            StartCoroutine(StartKnockback((transform.position - collision.collider.bounds.center).normalized));
+        }
+    }
+
     //private void OnGUI()
     //{
     //    GUILayout.Label("Stamina: " + ((int)stamina).ToString());
@@ -128,32 +197,39 @@ public class Player : MonoBehaviour
     #endregion
 
     #region Attacks
-    private void AttackDash()
+    private void StartDashAttack()
     {
-        Vector2 mousePos = Vector2.zero;
-        Vector2 mouseDir = GetMouseDirectionFromPlayer(ref mousePos);
+        Vector2 mouseDir = GetMouseDirectionFromPlayer();
 
-        RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, collider.radius, mouseDir, dashRange);
-        foreach (RaycastHit2D hit in hits)
+        dashing = true;
+        collider.isTrigger = true;
+
+        StartCoroutine(DashAttackCoroutine(mouseDir));
+    }
+    IEnumerator DashAttackCoroutine(Vector2 direction)
+    {
+        controller.SetFreeMovement(false);
+        controller.SetRbVelocity(direction * dashSpeed);
+
+        float timer = 0;
+        while(timer < dashDuration)
         {
-            // Check if hit is an enemy
+            if (!dashing) break;
 
-            // Deal damage
-
-            // Add fury if not already in fury
-            if (!furyMode)
-            {
-                furyAmount = Mathf.Min(furyAmountMax, furyAmount + furyGainByAttack);
-                if (furyAmount == furyAmountMax) SetFuryMode(true);
-            }
+            timer += Time.deltaTime;
+            yield return null;
         }
 
-        Vector2 dashPos = mousePos;
-        if (Vector2.Distance((Vector2)transform.position, dashPos) > dashRange)
-        {
-            dashPos = (Vector2)transform.position + mouseDir * dashRange;
-        }
-        transform.position = dashPos;
+        StopDashAttack();
+    }
+    void StopDashAttack()
+    {
+        dashing = false;
+        collider.isTrigger = false;
+        controller.ResetRbVelocity();
+        controller.SetFreeMovement(true);
+
+        enemiesTouched.Clear();
     }
     private void LaunchShurikens()
     {
@@ -189,13 +265,27 @@ public class Player : MonoBehaviour
         // Update UI
         HealthDisplayer.UpdateDisplay(health);
     }
-    void TakeDamage()
+    void TakeDamage(bool becomeInvulnerable = true, Vector2? knockBackDir = null)
     {
-        if (dead) return;
+        if (dead || invulnerable) return;
 
         // Take Damage
         health--;
         if (health <= 0) Die();
+        else
+        {
+            // Make the player invulnerable for a period of time
+            if (becomeInvulnerable)
+            {
+                StartCoroutine(BecomeTemporaryInvulnerable());
+            }
+
+            // Give a knock back to the player if we want to 
+            if(knockBackDir != null)
+            {
+                StartCoroutine(StartKnockback((Vector2)knockBackDir));
+            }
+        }
 
         // Update UI
         HealthDisplayer.UpdateDisplay(health);
@@ -207,6 +297,23 @@ public class Player : MonoBehaviour
         dead = true;
     }
     #endregion
+
+    IEnumerator BecomeTemporaryInvulnerable()
+    {
+        invulnerable = true;
+        yield return new WaitForSeconds(invulnerabilityTimer);
+        invulnerable = false;
+    }
+    IEnumerator StartKnockback(Vector2 direction)
+    {
+        stagger = true;
+        controller.SetFreeMovement(false);
+        controller.SetRbVelocity(direction * knockBackSpeed);
+        yield return new WaitForSeconds(knockBackDuration);
+        controller.ResetRbVelocity();
+        controller.SetFreeMovement(true);
+        stagger = false;
+    }
 
     void SetFuryMode(bool furyMode)
     {

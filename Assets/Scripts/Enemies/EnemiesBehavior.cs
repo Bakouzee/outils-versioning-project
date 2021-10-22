@@ -147,7 +147,7 @@ public class EnemiesBehavior : MonoBehaviour
         }
     }
 
-    void TakeDamage()
+    public void TakeDamage()
     {
         // Anim TakeDamage
         health--;
