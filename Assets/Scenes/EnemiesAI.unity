@@ -3784,8 +3784,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6db2a2fd6a6b4304a867bf7177bcb54a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  withShield: 1
-  closeCombat: 1
+  withShield: 0
+  closeCombat: 0
   health: 25
   timer: 0
   speedEnemy: 2
