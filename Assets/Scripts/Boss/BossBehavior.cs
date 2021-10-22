@@ -6,10 +6,13 @@ public class BossBehavior : MonoBehaviour
 {
     bool isDead;
     bool canMove;
+    bool isAttacking;
 
     float distance;
     public float speedBoss;
+    float timer = 0f;
 
+    int randTiming = 0;
     int randAttack;
     public int bossHealth = 100;
 
@@ -20,8 +23,11 @@ public class BossBehavior : MonoBehaviour
 
     private void Start()
     {
+        randTiming = Random.Range(5, 10);
+        Debug.Log(randTiming);
         rb = GetComponent<Rigidbody2D>();
         player = GameObject.Find("Player").GetComponent<Transform>();
+        canMove = true;
     }
 
     private void Update()
@@ -38,9 +44,18 @@ public class BossBehavior : MonoBehaviour
             BossMove(movement);
         }
 
-        if (!isDead)
+        timer += Time.deltaTime;
+        
+
+        if (timer >= randTiming && (!isDead && !isAttacking))
+        {            
+            StartCoroutine(BossTakingABreath());            
+        }
+
+        if (isAttacking)
         {
-            randAttack = Random.Range(0, 2);
+            randAttack = Random.Range(0, 3);
+            Debug.Log(randAttack);
             switch (randAttack)
             {
                 case 0:
@@ -55,24 +70,37 @@ public class BossBehavior : MonoBehaviour
                 default:
                     break;
             }
-            StartCoroutine(BossTakingABreath());
         }
     }
     
     void Dash()
     {
         Debug.Log("Dash");
+        canMove = true;
+        isAttacking = false;
+        timer = 0f;
+        randTiming = Random.Range(5, 10);
+        Debug.Log(randTiming);
     }
 
     void Shield()
     {
         Debug.Log("Shield");
-
+        canMove = true;
+        isAttacking = false;
+        timer = 0f;
+        randTiming = Random.Range(5, 10);
+        Debug.Log(randTiming);
     }
 
     void ShurikenAOE()
     {
         Debug.Log("Shuriken");
+        canMove = true;
+        isAttacking = false;
+        timer = 0f;
+        randTiming = Random.Range(5, 10);
+        Debug.Log(randTiming);
     }
 
     public void TakeDamage()
@@ -91,7 +119,7 @@ public class BossBehavior : MonoBehaviour
     {
         canMove = false;
         yield return new WaitForSeconds(5.0f);
-        canMove = true;
+        isAttacking = true;
     }
 
     void BossMove(Vector2 direction)
