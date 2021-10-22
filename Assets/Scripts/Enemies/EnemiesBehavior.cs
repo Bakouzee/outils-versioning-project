@@ -104,8 +104,7 @@ public class EnemiesBehavior : MonoBehaviour
 
         if(health <= 0)
         {
-            this.enabled = false;        // script disable to avoid problems
-            gameObject.SetActive(false); // gameObject disable
+            Dead();
         }
     }
 
@@ -146,6 +145,18 @@ public class EnemiesBehavior : MonoBehaviour
             //GameObject.Find("Player").GetComponent<HealthDisplayer>().health -= 2; // when the player hits by the collider then he's loosing 2hp
             playerLoseHealth = true;
         }
+    }
+
+    void TakeDamage()
+    {
+        // Anim TakeDamage
+        health--;
+    }
+
+    void Dead()
+    {
+        this.enabled = false;        // script disable to avoid problems
+        gameObject.SetActive(false); // gameObject disable
     }
 
     private void OnDrawGizmos()
