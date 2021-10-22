@@ -55,7 +55,7 @@ public class EnemiesBehavior : MonoBehaviour
         Vector2 direction = gameObject.transform.position - player.position; // gives the direction between the enemy and the player
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg; // gives the angle between the enemy and the player
         rb.rotation = angle;                                                 // the rotation is refreshing every frame to point to the player
-        direction.Normalize();                                               
+        direction.Normalize();                                               // the length of the vector will always be 1 and always pointed to the same direction
         movement = direction;
 
         if (closeCombat)
