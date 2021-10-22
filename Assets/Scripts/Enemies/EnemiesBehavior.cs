@@ -4,9 +4,18 @@ using UnityEngine;
 
 public class EnemiesBehavior : MonoBehaviour
 {
+    [Header("Enemy Settings")]
     public bool withShield;
-    bool canDash, isReloadingTheDash;
     public bool closeCombat;
+
+    [Header("Enemy Health")]
+    public int health = 25;
+
+    [Header("Informations")]
+    bool canDash;
+    bool isReloadingTheDash;
+    bool playerLoseHealth;
+    bool canMove;
 
     public float timer= 0f;
     public float speedEnemy = 0f;
@@ -15,15 +24,17 @@ public class EnemiesBehavior : MonoBehaviour
     public float distanceSeeingByEnemy = 0f;
     public float timerBeforeDash = 5f;
     public float range = 2.0f;
+    float attackRate = 0f;
+    [SerializeField, Range(0f, 15f)] float attackRadius;
 
-    public int health = 25;
 
     Vector2 movement;
+    Vector2 attackRange = new Vector2(2.0f, -2.0f);
 
-    LayerMask playerLayer;
-    RaycastHit2D cac;
+    public LayerMask playerLayer;
 
     Transform player;
+    public Transform attack;
     Rigidbody2D rb;
     public GameObject shield;
 
@@ -34,6 +45,8 @@ public class EnemiesBehavior : MonoBehaviour
         rb = gameObject.GetComponent<Rigidbody2D>();
         shield.SetActive(false);
         isReloadingTheDash = false;
+        playerLoseHealth = false;
+        canMove = true;
     }
 
     void Update()
@@ -47,9 +60,19 @@ public class EnemiesBehavior : MonoBehaviour
 
         if (closeCombat)
         {
-            if(distance <= range)
+            if(distance <= range && playerLoseHealth == false)
             {
                 Attack();
+            }
+            if (playerLoseHealth)
+            {
+                attackRate += Time.deltaTime;
+                if(attackRate >= 1.5f)
+                {
+                    playerLoseHealth = false;
+                    canMove = true;
+                    attackRate = 0f;
+                }
             }
         }
         else
@@ -88,7 +111,7 @@ public class EnemiesBehavior : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (!canDash)
+        if (!canDash && canMove)
         {
             MoveEnemy(movement);
         } else if(canDash && !isReloadingTheDash)
@@ -115,7 +138,19 @@ public class EnemiesBehavior : MonoBehaviour
 
     void Attack()
     {
-        Vector2 attackRange = new Vector2(2.0f, -2.0f);
-        Physics2D.OverlapArea(transform.position, attackRange, playerLayer);
+        canMove = false;
+        Collider2D[] hit = Physics2D.OverlapCircleAll(attack.position, attackRadius, playerLayer);
+        // Attack animation
+        foreach (Collider2D player in hit)
+        {
+            //GameObject.Find("Player").GetComponent<HealthDisplayer>().health -= 2; // when the player hits by the collider then he's loosing 2hp
+            playerLoseHealth = true;
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(attack.position, attackRadius);
     }
 }
