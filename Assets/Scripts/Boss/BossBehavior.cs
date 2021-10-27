@@ -10,24 +10,34 @@ public class BossBehavior : MonoBehaviour
 
     float distance;
     public float speedBoss;
+    public float rotationSpeed = 0f;
     float timer = 0f;
+    float timerAttacking = 0f;
+    float timerShields = 5f;
 
     int randTiming = 0;
-    int randAttack;
+    public int randAttack = int.MinValue;
     public int bossHealth = 100;
 
     Vector2 movement;
 
     Transform player;
     Rigidbody2D rb;
+    public GameObject[] shields;
 
     private void Start()
     {
+        for(int i = 0; i < shields.Length; i++)
+        {
+            shields[i].SetActive(false);
+        }
         randTiming = Random.Range(5, 10);
         Debug.Log(randTiming);
         rb = GetComponent<Rigidbody2D>();
         player = GameObject.Find("Player").GetComponent<Transform>();
+        isDead = false;
         canMove = true;
+        isAttacking = false;
     }
 
     private void Update()
@@ -45,62 +55,67 @@ public class BossBehavior : MonoBehaviour
         }
 
         timer += Time.deltaTime;
-        
 
-        if (timer >= randTiming && (!isDead && !isAttacking))
-        {            
-            StartCoroutine(BossTakingABreath());            
+        if (timer >= randTiming && !isAttacking)
+        {
+            StartCoroutine(ChooseAnAttack());
         }
 
-        if (isAttacking)
+        // Attacks
+        if (randAttack == 0) // Shields
         {
-            randAttack = Random.Range(0, 3);
-            Debug.Log(randAttack);
-            switch (randAttack)
+            for (int i = 0; i < shields.Length; i++)
             {
-                case 0:
-                    Dash();
-                    break;
-                case 1:
-                    Shield();
-                    break;
-                case 2:
-                    ShurikenAOE();
-                    break;
-                default:
-                    break;
+                shields[i].transform.RotateAround(gameObject.transform.position, Vector3.forward, rotationSpeed * Time.deltaTime);
             }
+
+            timerAttacking += Time.deltaTime;
+
+            // Reinitialisation
+            if(timerAttacking >= timerShields)
+            {
+                for (int i = 0; i < shields.Length; i++)
+                {
+                    shields[i].SetActive(false);
+                }
+                StartCoroutine(Reinitialisation());
+                randTiming = Random.Range(5, 10);
+                isAttacking = false;
+                timer = 0f;
+                timerAttacking = 0f;
+                randAttack = 3;
+            }
+        } else if(randAttack == 1) // Dash
+        {
+
+        }
+
+        if(bossHealth <= 0)
+        {
+            Dead();
         }
     }
     
     void Dash()
     {
         Debug.Log("Dash");
-        canMove = true;
-        isAttacking = false;
-        timer = 0f;
-        randTiming = Random.Range(5, 10);
-        Debug.Log(randTiming);
+        //StartCoroutine(ChooseAnAttack());
     }
 
     void Shield()
     {
         Debug.Log("Shield");
+        for (int i = 0; i < shields.Length; i++)
+        {
+            shields[i].SetActive(true);
+        }
         canMove = true;
-        isAttacking = false;
-        timer = 0f;
-        randTiming = Random.Range(5, 10);
-        Debug.Log(randTiming);
     }
 
     void ShurikenAOE()
     {
         Debug.Log("Shuriken");
-        canMove = true;
-        isAttacking = false;
-        timer = 0f;
-        randTiming = Random.Range(5, 10);
-        Debug.Log(randTiming);
+        //StartCoroutine(ChooseAnAttack());
     }
 
     public void TakeDamage()
@@ -115,11 +130,32 @@ public class BossBehavior : MonoBehaviour
         isDead = true;
     }
 
-    IEnumerator BossTakingABreath()
+    IEnumerator Reinitialisation()
     {
-        canMove = false;
-        yield return new WaitForSeconds(5.0f);
+        yield return new WaitForSeconds(6.0f);
+        StartCoroutine(ChooseAnAttack());
+    }
+
+    IEnumerator ChooseAnAttack()
+    {
         isAttacking = true;
+        canMove = false;
+        randAttack = Random.Range(0, 3);
+        yield return new WaitForSeconds(2.0f);
+        switch (randAttack)
+        {
+            case 0:
+                Shield();
+                break;
+            case 1:
+                Dash();
+                break;
+            case 2:
+                ShurikenAOE();
+                break;
+            default:
+                break;
+        }
     }
 
     void BossMove(Vector2 direction)
