@@ -14,7 +14,7 @@ public class Door : MonoBehaviour
     public GameObject doorCollider;
 
     private GameObject player;
-    private float widthOffset = 4f;
+    private float widthOffset = 3f;
 
     private void Start()
     {
@@ -25,6 +25,7 @@ public class Door : MonoBehaviour
     {
         if(other.tag == "Player")
         {
+            Debug.Log("enter a door");
             switch(doorType)
             {
                 case DoorType.bottom:

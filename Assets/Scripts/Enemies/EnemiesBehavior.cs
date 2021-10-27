@@ -16,6 +16,7 @@ public class EnemiesBehavior : MonoBehaviour
     bool isReloadingTheDash;
     bool playerLoseHealth;
     bool canMove;
+    public bool notInRoom = false;
 
     public float timer= 0f;
     public float speedEnemy = 0f;
@@ -46,7 +47,6 @@ public class EnemiesBehavior : MonoBehaviour
         shield.SetActive(false);
         isReloadingTheDash = false;
         playerLoseHealth = false;
-        canMove = true;
     }
 
     void Update()
@@ -57,6 +57,16 @@ public class EnemiesBehavior : MonoBehaviour
         rb.rotation = angle;                                                 // the rotation is refreshing every frame to point to the player
         direction.Normalize();                                               // the length of the vector will always be 1 and always pointed to the same direction
         movement = direction;
+
+        switch(notInRoom)
+            {
+            case true:
+                canMove = false;
+                break;
+            case false:
+                canMove = true;
+                break;
+        }
 
         if (closeCombat)
         {
@@ -157,6 +167,7 @@ public class EnemiesBehavior : MonoBehaviour
     {
         this.enabled = false;        // script disable to avoid problems
         gameObject.SetActive(false); // gameObject disable
+        RoomController.instance.StartCoroutine(RoomController.instance.RoomCoroutine());
     }
 
     private void OnDrawGizmos()

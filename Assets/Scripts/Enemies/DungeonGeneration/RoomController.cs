@@ -35,15 +35,6 @@ public class RoomController : MonoBehaviour
         instance = this;
     }
 
-    void Start()
-    {
-        //LoadRoom("Start", 0, 0);
-        //LoadRoom("Empty", 1, 0);
-        //LoadRoom("Empty", -1, 0);
-        //LoadRoom("Empty", 0, 1);
-        //LoadRoom("Empty", 0, -1);
-    }
-
     void Update()
     {
         UpdateRoomQueue();
@@ -194,10 +185,10 @@ public class RoomController : MonoBehaviour
         {
             if(currRoom != room)
             {
-                EnemyController[] enemies = room.GetComponentsInChildren<EnemyController>();
+                EnemiesBehavior[] enemies = room.GetComponentsInChildren<EnemiesBehavior>();
                 if(enemies != null)
                 {
-                    foreach(EnemyController enemy in enemies)
+                    foreach(EnemiesBehavior enemy in enemies)
                     {
                         enemy.notInRoom = true;
                         Debug.Log("Not in room");
@@ -218,10 +209,10 @@ public class RoomController : MonoBehaviour
             }
             else
             {
-              EnemyController[] enemies = room.GetComponentsInChildren<EnemyController>();
+                EnemiesBehavior[] enemies = room.GetComponentsInChildren<EnemiesBehavior>();
                 if(enemies.Length > 0)
                 {
-                    foreach(EnemyController enemy in enemies)
+                    foreach(EnemiesBehavior enemy in enemies)
                     {
                         enemy.notInRoom = false;
                         Debug.Log("In room");
