@@ -11,6 +11,7 @@ public class BossBehavior : MonoBehaviour
     float distance;
     public float speedBoss;
     public float rotationSpeed = 0f;
+    public float speedShuriken = 0f;
     float timer = 0f;
     float timerAttacking = 0f;
     float timerShields = 5f;
@@ -24,6 +25,9 @@ public class BossBehavior : MonoBehaviour
     Transform player;
     Rigidbody2D rb;
     public GameObject[] shields;
+    public GameObject shuriken;
+    GameObject shurikenClone;
+
 
     private void Start()
     {
@@ -72,34 +76,45 @@ public class BossBehavior : MonoBehaviour
             timerAttacking += Time.deltaTime;
 
             // Reinitialisation
-            if(timerAttacking >= timerShields)
+            if (timerAttacking >= timerShields)
             {
                 for (int i = 0; i < shields.Length; i++)
                 {
                     shields[i].SetActive(false);
                 }
-                StartCoroutine(Reinitialisation());
                 randTiming = Random.Range(5, 10);
                 isAttacking = false;
                 timer = 0f;
                 timerAttacking = 0f;
                 randAttack = 3;
             }
-        } else if(randAttack == 1) // Dash
+        }
+        else if (randAttack == 1) // Shuriken
         {
+            float anAngle = ((2 * Mathf.PI) / 8f);
+            float nextAngle = 0f;
+
+            for (int i = 0; i < 8; i++)
+            {
+                Vector2 directionShuriken = new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)).normalized;
+
+                shurikenClone = Instantiate(shuriken, transform.position, Quaternion.identity);
+                shurikenClone.GetComponent<Rigidbody2D>().velocity = directionShuriken * speedShuriken;
+
+                nextAngle += anAngle;
+            }
+
+            randAttack = 3;
+        }
+        else if (randAttack == 2) // Dash
+        {
+            StartCoroutine(ChooseAnAttack());
 
         }
-
-        if(bossHealth <= 0)
+        if (bossHealth <= 0)
         {
             Dead();
         }
-    }
-    
-    void Dash()
-    {
-        Debug.Log("Dash");
-        //StartCoroutine(ChooseAnAttack());
     }
 
     void Shield()
@@ -115,6 +130,13 @@ public class BossBehavior : MonoBehaviour
     void ShurikenAOE()
     {
         Debug.Log("Shuriken");
+
+        //StartCoroutine(ChooseAnAttack());
+    }
+
+    void Dash()
+    {
+        Debug.Log("Dash");
         //StartCoroutine(ChooseAnAttack());
     }
 
@@ -130,12 +152,6 @@ public class BossBehavior : MonoBehaviour
         isDead = true;
     }
 
-    IEnumerator Reinitialisation()
-    {
-        yield return new WaitForSeconds(6.0f);
-        StartCoroutine(ChooseAnAttack());
-    }
-
     IEnumerator ChooseAnAttack()
     {
         isAttacking = true;
@@ -148,10 +164,10 @@ public class BossBehavior : MonoBehaviour
                 Shield();
                 break;
             case 1:
-                Dash();
+                ShurikenAOE();
                 break;
             case 2:
-                ShurikenAOE();
+                Dash();
                 break;
             default:
                 break;
@@ -161,5 +177,11 @@ public class BossBehavior : MonoBehaviour
     void BossMove(Vector2 direction)
     {
         rb.MovePosition((Vector2)transform.position - (direction * speedBoss * Time.deltaTime)); // the enemy's moving to the player at a certain speed through time
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        
+            //envoyer raycast, choper la direction, si t'arrives à destination tu prends la nouvelle
     }
 }
