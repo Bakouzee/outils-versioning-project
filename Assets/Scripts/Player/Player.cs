@@ -283,7 +283,7 @@ public class Player : MonoBehaviour
     {
         // Create a dash attack and add it to the current combo
         PlayerAttack dash = new PlayerAttack(controller.GetRbDirection(), enemiesTouched);
-        Debug.Log(dash.touched);
+        //Debug.Log(dash.touched);
         AddAttackToCurrentCombo(dash);
 
         dashing = false;
@@ -348,14 +348,14 @@ public class Player : MonoBehaviour
         {
             // Fast check to gain some time
             // If the last dashdirection is not the same --> not this combo
-            Debug.Log($"{currentComboMoves[currentComboMoves.Length - 1]} == {combo.moves[combo.moves.Length - 1]}");
+            //Debug.Log($"{currentComboMoves[currentComboMoves.Length - 1]} == {combo.moves[combo.moves.Length - 1]}");
             if (currentComboMoves[currentComboMoves.Length - 1] != combo.moves[combo.moves.Length - 1]) continue;
 
             // Long check
             bool sameDirection = true;
             for (int i = 1; i < combo.moves.Length; i++)
             {
-                Debug.Log($"{currentComboMoves[currentComboMoves.Length - i - 1]} == {combo.moves[combo.moves.Length - i - 1]}");
+                //Debug.Log($"{currentComboMoves[currentComboMoves.Length - i - 1]} == {combo.moves[combo.moves.Length - i - 1]}");
                 if(currentComboMoves[currentComboMoves.Length - i - 1] != combo.moves[combo.moves.Length - i - 1])
                 {
                     sameDirection = false;
@@ -366,7 +366,7 @@ public class Player : MonoBehaviour
             if (!sameDirection) continue;
 
             // We assume that only the good combo will read the code below
-            Debug.Log($"Combo named {combo.name} has been found");
+            Debug.Log($"{combo.name.ToUpper()}!");
 
             // Deal combos damage
             foreach (PlayerAttack attack in currentCombo) 
@@ -375,8 +375,8 @@ public class Player : MonoBehaviour
                 {
                     foreach (EnemiesBehavior enemy in attack.enemiesTouched)
                     {
-                        Debug.Log($"Tried to deal damage to {enemy.name}");
-                        //enemy.TakeDamage(combo.damage);
+                        //Debug.Log($"Tried to deal damage to {enemy.name}");
+                        enemy.TakeDamage();
                     }
                 }
             }
@@ -386,8 +386,8 @@ public class Player : MonoBehaviour
     }
     void StopCurrentCombo()
     {
+        Debug.Log($"Current combo stopped after {currentCombo.Count} dashes");
         currentCombo.Clear();
-        Debug.Log("Current combo stopped");
     }
 
         #region Under da hood funcs
