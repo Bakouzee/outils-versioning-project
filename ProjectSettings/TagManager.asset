@@ -8,6 +8,8 @@ TagManager:
   - Rooms
   - Wall
   - Enemy
+  - Boss
+  - Shuriken
   - EnemyShield
   - room
   layers:
