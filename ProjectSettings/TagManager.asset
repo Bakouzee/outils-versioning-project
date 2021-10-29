@@ -4,6 +4,8 @@
 TagManager:
   serializedVersion: 2
   tags:
+  - SpawnPoint
+  - Rooms
   - Wall
   - Enemy
   - EnemyShield
@@ -43,4 +45,7 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Door
+    uniqueID: 3635209335
     locked: 0
