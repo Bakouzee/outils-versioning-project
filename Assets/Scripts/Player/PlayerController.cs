@@ -43,6 +43,7 @@ public class PlayerController : MonoBehaviour
         currentSpeed = furyMode ? furySpeed : normalSpeed;
     }
 
+    public Vector2 GetRbDirection() => rb.velocity.normalized;
     public void SetRbVelocity(Vector2 velocity)
     {
         rb.velocity = velocity;

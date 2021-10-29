@@ -109,6 +109,14 @@ MonoBehaviour:
   furyAmountMax: 100
   furyGainByAttack: 25
   furyDecreaseRate: 10
+  combos:
+  - name: Four
+    damage: 1
+    moves: 030000000800000001000000
+  - name: Reversed Four
+    damage: 1
+    moves: 020000000500000004000000
+  timeToCancelCombo: 2.5
   dashSpeed: 100
   dashDuration: 0.1
   dashStaminaCost: 30

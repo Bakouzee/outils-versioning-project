@@ -30,12 +30,57 @@ public class Player : MonoBehaviour
     float furyAmount;
     bool furyMode;
 
+    #region Combos
+    public enum DashDirection { None, Right, Left, Up, Down, UpRight, UpLeft, DownRight, DownLeft};
+    public static DashDirection VectorToDashDirection(Vector2 vectorDir)
+    {
+        Vector2[] vectors = new Vector2[8] { Vector2.right, Vector2.left, Vector2.up, Vector2.down, (Vector2.up + Vector2.right).normalized, (Vector2.up + Vector2.left).normalized, (Vector2.down + Vector2.right).normalized, (Vector2.down + Vector2.left).normalized };
+        float bestAngle = Vector2.Angle(vectorDir, vectors[0]);
+        int bestVectorIndex = 0;
+        for (int i = 1; i < vectors.Length; i++)
+        {
+            float angle = Vector2.Angle(vectorDir, vectors[i]);
+            if(angle < bestAngle)
+            {
+                bestAngle = angle;
+                bestVectorIndex = i;
+            }
+        }
+        return (DashDirection)(bestVectorIndex+1);
+    }
+    [System.Serializable] struct PlayerCombo
+    {
+        public string name;
+        public int damage;
+        public DashDirection[] moves;
+    }
+    [Header("Combos")]
+    [SerializeField] PlayerCombo[] combos;
+    [System.Serializable] struct PlayerAttack
+    {
+        public DashDirection dir;
+        public bool touched;
+        public EnemiesBehavior[] enemiesTouched;
+
+        public PlayerAttack(Vector2 vectorDir, List<EnemiesBehavior> enemiesTouched)
+        {
+            this.dir = VectorToDashDirection(vectorDir);
+            this.touched = enemiesTouched.Count > 0;
+            this.enemiesTouched = enemiesTouched.ToArray();
+        }
+    }
+    List<PlayerAttack> currentCombo = new List<PlayerAttack>();
+    float currentComboTimer;
+    [SerializeField] float timeToCancelCombo = 1f;
+    #endregion
+
     [Header("Dash attack")]
     [SerializeField] float dashSpeed;
     [SerializeField] float dashDuration;
     [SerializeField] float dashStaminaCost;
     bool dashing;
     List<EnemiesBehavior> enemiesTouched = new List<EnemiesBehavior>();
+
 
     [Header("Shurikens attack"), SerializeField] GameObject shurikenPrefab;
     [SerializeField] int shurikenLaunchedByAttack;
@@ -75,6 +120,14 @@ public class Player : MonoBehaviour
                 StaminaDisplayer.UpdateDisplay(stamina);
             }
 
+            // If we're doing a combo --> wait to cancel it
+            if(currentCombo.Count > 0)
+            {
+                currentComboTimer -= Time.deltaTime;
+                if (currentComboTimer <= 0) StopCurrentCombo();
+            }
+
+            // If the player is not staggered/stunned
             if (!stagger)
             {
                 // Test furymode
@@ -125,7 +178,7 @@ public class Player : MonoBehaviour
     {
         if (dashing)
         {
-            Debug.Log(collision.tag);
+            //Debug.Log(collision.tag);
             switch (collision.tag)
             {
                 case "Wall":
@@ -134,11 +187,11 @@ public class Player : MonoBehaviour
                     break;
                 case "Enemy":
                     // Get the enemy
-                        Debug.Log("?");
+                        //Debug.Log("?");
                     EnemiesBehavior enemy;
                     if(collision.TryGetComponent(out enemy))
                     {
-                        Debug.Log("Componenet found");
+                        //Debug.Log("Componenet found");
                         // Check if this enemy already has been touched
                         if (!enemiesTouched.Contains(enemy))
                         {
@@ -148,12 +201,16 @@ public class Player : MonoBehaviour
                             // Deal damage to the enemy touched
                             enemy.TakeDamage();
 
+                            // Reset combo timer
+                            ResetComboTimer();
+
                             // Add fury points if not already in fury
                             if (!furyMode)
                             {
                                 furyAmount = Mathf.Min(furyAmountMax, furyAmount + furyGainByAttack);
                                 if (furyAmount == furyAmountMax) SetFuryMode(true);
                             }
+
                         }
                     }
                     break;
@@ -224,11 +281,19 @@ public class Player : MonoBehaviour
     }
     void StopDashAttack()
     {
+        // Create a dash attack and add it to the current combo
+        PlayerAttack dash = new PlayerAttack(controller.GetRbDirection(), enemiesTouched);
+        //Debug.Log(dash.touched);
+        AddAttackToCurrentCombo(dash);
+
         dashing = false;
+        // Change back collider
         collider.isTrigger = false;
+        // Stop player and set it movable 
         controller.ResetRbVelocity();
         controller.SetFreeMovement(true);
 
+        // Remove all enemies touched during the dash
         enemiesTouched.Clear();
     }
     private void LaunchShurikens()
@@ -251,6 +316,93 @@ public class Player : MonoBehaviour
             yield return new WaitForSeconds(timeBetweenTwoShurikens);
         }
     }
+    #endregion
+
+    #region Combos functions
+    void AddAttackToCurrentCombo(PlayerAttack attack)
+    {
+        // Check if the two last dash didn't touch an enemy --> stop current combo if yes
+        if(currentCombo.Count > 0)
+        {
+            if(!attack.touched && !currentCombo[currentCombo.Count - 1].touched)
+            {
+                StopCurrentCombo();
+                return;
+            }
+        }
+
+        // Add the attack to the current combo and reset the timer to cancel the combo
+        currentCombo.Add(attack);
+        ResetComboTimer();
+
+        // Check if the current combo is valid
+        CheckCurrentCombo();
+    }
+    void CheckCurrentCombo()
+    {
+        // Translate current combos in direction
+        DashDirection[] currentComboMoves = CurrentComboToDashDirections();
+
+        // Compare each possible combos directions with the current combo directions
+        foreach (PlayerCombo combo in combos)
+        {
+            // Fast check to gain some time
+            // If the last dashdirection is not the same --> not this combo
+            //Debug.Log($"{currentComboMoves[currentComboMoves.Length - 1]} == {combo.moves[combo.moves.Length - 1]}");
+            if (currentComboMoves[currentComboMoves.Length - 1] != combo.moves[combo.moves.Length - 1]) continue;
+
+            // Long check
+            bool sameDirection = true;
+            for (int i = 1; i < combo.moves.Length; i++)
+            {
+                //Debug.Log($"{currentComboMoves[currentComboMoves.Length - i - 1]} == {combo.moves[combo.moves.Length - i - 1]}");
+                if(currentComboMoves[currentComboMoves.Length - i - 1] != combo.moves[combo.moves.Length - i - 1])
+                {
+                    sameDirection = false;
+                    break;
+                }
+            }
+            // If not exactly the same --> not this combo
+            if (!sameDirection) continue;
+
+            // We assume that only the good combo will read the code below
+            Debug.Log($"{combo.name.ToUpper()}!");
+
+            // Deal combos damage
+            foreach (PlayerAttack attack in currentCombo) 
+            {
+                if (attack.touched) 
+                {
+                    foreach (EnemiesBehavior enemy in attack.enemiesTouched)
+                    {
+                        //Debug.Log($"Tried to deal damage to {enemy.name}");
+                        enemy.TakeDamage();
+                    }
+                }
+            }
+
+            StopCurrentCombo();
+        }
+    }
+    void StopCurrentCombo()
+    {
+        Debug.Log($"Current combo stopped after {currentCombo.Count} dashes");
+        currentCombo.Clear();
+    }
+
+        #region Under da hood funcs
+    void ResetComboTimer() => currentComboTimer = timeToCancelCombo;
+    DashDirection[] CurrentComboToDashDirections()
+    {
+        DashDirection[] result = new DashDirection[currentCombo.Count];
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = currentCombo[i].dir;
+        }
+        return result;
+    }
+        #endregion
+
     #endregion
 
     #region Heal methods
